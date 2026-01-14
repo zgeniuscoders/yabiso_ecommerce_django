@@ -1,7 +1,7 @@
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
-from api.models import Category
+from api.models import Category, Product
 
 
 class UpsertCategorySerializer(serializers.ModelSerializer):
@@ -39,6 +39,7 @@ class UpsertCategorySerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Fichier non valide, une image est requise")
         return image
 
+
 class CategoryChildSz(serializers.ModelSerializer):
     image = serializers.ImageField(required=True)
 
@@ -47,7 +48,7 @@ class CategoryChildSz(serializers.ModelSerializer):
         fields = ['id', 'name', 'slug', 'image']
 
 
-class CategorySz(serializers.ModelSerializer):
+class CategoryListSz(serializers.ModelSerializer):
     children = serializers.SerializerMethodField(read_only=True)
     image = serializers.ImageField(required=True)
 
@@ -68,3 +69,28 @@ class CategorySz(serializers.ModelSerializer):
     def get_children(self, obj):
         children = obj.children.all()
         return CategoryChildSz(children, many=True).data
+
+
+class CategorySz(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ['id', 'name', 'slug', 'image']
+        read_only_fields = ["id"]
+
+
+class ProductSz(serializers.ModelSerializer):
+    image = serializers.ImageField(required=True)
+    category = CategorySz(read_only=True, many=False)
+
+    category_id = serializers.PrimaryKeyRelatedField(
+        queryset=Category.objects.all(),
+        source="category",
+        required=False,
+        allow_null=True,
+        write_only=True
+    )
+
+    class Meta:
+        model = Product
+        fields = ['id', 'name', 'slug', 'image', 'price', 'description', 'category', 'category_id']
+        read_only_fields = ["id", "category"]
