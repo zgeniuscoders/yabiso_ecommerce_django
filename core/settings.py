@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/6.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
-
+import os
 from pathlib import Path
 import environ
 
@@ -45,7 +45,6 @@ INSTALLED_APPS = [
     "corsheaders",
     "rest_framework_simplejwt",
     "rest_framework",
-    "rest_framework.permissions.IsAuthenticated",
     "api"
 ]
 
