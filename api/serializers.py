@@ -111,3 +111,21 @@ class ProductImageSz(serializers.ModelSerializer):
         model = ProductImage
         fields = ['id', 'image', 'product', 'product_id']
         read_only_fields = ["id", 'product']
+
+
+class ProductDetailSz(serializers.ModelSerializer):
+    images = ProductImageSz(many=True, read_only=True)
+    category = CategorySz(read_only=True, many=False)
+
+    class Meta:
+        model = Product
+        fields = [
+            'id',
+            'name',
+            'slug',
+            'image',
+            'category',
+            'price',
+            'description',
+            'images',
+        ]
