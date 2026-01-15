@@ -3,7 +3,7 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.viewsets import ModelViewSet
 
 from api.models import Category, Product, ProductImage
-from api.serializers import UpsertCategorySerializer, ProductSz, CategoryListSz, ProductImageSz
+from api.serializers import UpsertCategorySerializer, ProductSz, CategoryListSz, ProductImageSz, ProductDetailSz
 
 
 @extend_schema_view(
@@ -27,13 +27,33 @@ class CategoryVS(ModelViewSet):
 
 
 @extend_schema_view(
-    responses=ProductSz,
-    request=ProductSz,
+    list=extend_schema(
+        responses=ProductSz(many=True)
+    ),
+    retrieve=extend_schema(
+        responses=ProductDetailSz
+    ),
+    create=extend_schema(
+        request=ProductSz,
+        responses=ProductSz
+    ),
 )
 class ProductVS(ModelViewSet):
-    queryset = Product.objects.all()
     serializer_class = ProductSz
     parser_classes = (MultiPartParser, FormParser)
+
+    def get_queryset(self):
+        qs = Product.objects.all()
+        if self.action == 'retrieve':
+            qs = qs.prefetch_related('images')
+        return qs
+
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return ProductSz
+        if self.action == 'retrieve':
+            return ProductDetailSz
+        return ProductDetailSz
 
 
 @extend_schema_view(
