@@ -1,7 +1,7 @@
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
-from api.models import Category, Product
+from api.models import Category, Product, ProductImage
 
 
 class UpsertCategorySerializer(serializers.ModelSerializer):
@@ -94,3 +94,20 @@ class ProductSz(serializers.ModelSerializer):
         model = Product
         fields = ['id', 'name', 'slug', 'image', 'price', 'description', 'category', 'category_id']
         read_only_fields = ["id", "category"]
+
+
+class ProductImageSz(serializers.ModelSerializer):
+    image = serializers.ImageField(required=True)
+
+    product_id = serializers.PrimaryKeyRelatedField(
+        queryset=Product.objects.all(),
+        source="product",
+        required=False,
+        allow_null=True,
+        write_only=True
+    )
+
+    class Meta:
+        model = ProductImage
+        fields = ['id', 'image', 'product', 'product_id']
+        read_only_fields = ["id", 'product']
