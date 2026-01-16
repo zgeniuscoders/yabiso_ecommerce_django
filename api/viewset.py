@@ -1,4 +1,5 @@
 from drf_spectacular.utils import extend_schema, extend_schema_view
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.viewsets import ModelViewSet
 
@@ -19,6 +20,10 @@ from api.serializers import UpsertCategorySerializer, ProductSz, CategoryListSz,
 class CategoryVS(ModelViewSet):
     queryset = Category.objects.all()
     parser_classes = (MultiPartParser, FormParser)
+    pagination_class = PageNumberPagination
+    pagination_class.page_size = 20
+    pagination_class.page_size_query_param = "perPage"
+    pagination_class.max_page_size = 100
 
     def get_serializer_class(self):
         if self.action in ["create", "update", "partial_update"]:
@@ -41,6 +46,10 @@ class CategoryVS(ModelViewSet):
 class ProductVS(ModelViewSet):
     serializer_class = ProductSz
     parser_classes = (MultiPartParser, FormParser)
+    pagination_class = PageNumberPagination
+    pagination_class.page_size = 20
+    pagination_class.page_size_query_param = "perPage"
+    pagination_class.max_page_size = 100
 
     def get_queryset(self):
         qs = Product.objects.all()
