@@ -19,7 +19,7 @@ class Category(models.Model):
 
 class Tag(models.Model):
     id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=100)
+    name = models.CharField(max_length=100,unique=True)
 
     class Meta:
         db_table = "tags"
