@@ -1,7 +1,7 @@
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
-from api.models import Category, Product, ProductImage
+from api.models import Category, Product, ProductImage, Tag
 
 
 class UpsertCategorySerializer(serializers.ModelSerializer):
@@ -78,6 +78,12 @@ class CategorySz(serializers.ModelSerializer):
         read_only_fields = ["id"]
 
 
+class TagSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Tag
+        fields = ['id', 'name']
+
+
 class ProductSz(serializers.ModelSerializer):
     image = serializers.ImageField(required=True)
     category = CategorySz(read_only=True, many=False)
@@ -90,10 +96,34 @@ class ProductSz(serializers.ModelSerializer):
         write_only=True
     )
 
+    tags = serializers.ListField(
+        child=serializers.CharField(),
+        write_only=True
+    )
+
+    images = serializers.ListField(
+        child=serializers.ImageField(),
+        write_only=True
+    )
+
     class Meta:
         model = Product
-        fields = ['id', 'name', 'slug', 'image', 'price', 'description', 'category', 'category_id']
+        fields = ['id', 'name', 'slug', 'image', 'price', 'description', 'category', 'category_id', 'tags', 'images']
         read_only_fields = ["id", "category"]
+
+    def create(self, validated_data):
+        tags_data = validated_data.pop("tags")
+        images = validated_data.pop("images")
+
+        product = Product.objects.create(**validated_data)
+
+        for productImage in images:
+            ProductImage.objects.create(product=product, image=productImage)
+
+        for tag_name in tags_data:
+            tag, created = Tag.objects.get_or_create(name=tag_name.strip())
+            product.tags.add(tag)
+        return product
 
 
 class ProductImageSz(serializers.ModelSerializer):
@@ -116,6 +146,7 @@ class ProductImageSz(serializers.ModelSerializer):
 class ProductDetailSz(serializers.ModelSerializer):
     images = ProductImageSz(many=True, read_only=True)
     category = CategorySz(read_only=True, many=False)
+    tags = TagSerializer(many=True, read_only=True)
 
     class Meta:
         model = Product
@@ -128,4 +159,5 @@ class ProductDetailSz(serializers.ModelSerializer):
             'price',
             'description',
             'images',
+            'tags'
         ]

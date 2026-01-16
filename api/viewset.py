@@ -54,7 +54,9 @@ class ProductVS(ModelViewSet):
     def get_queryset(self):
         qs = Product.objects.all()
         if self.action == 'retrieve':
-            qs = qs.prefetch_related('images')
+            qs = (qs.prefetch_related('images')
+                  .prefetch_related('category')
+                  .prefetch_related('tags'))
         return qs
 
     def get_serializer_class(self):
@@ -62,6 +64,8 @@ class ProductVS(ModelViewSet):
             return ProductSz
         if self.action == 'retrieve':
             return ProductDetailSz
+        if self.action == 'create':
+            return ProductSz
         return ProductDetailSz
 
 
