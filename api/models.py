@@ -17,6 +17,14 @@ class Category(models.Model):
         db_table = "categories"
 
 
+class Tag(models.Model):
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=100)
+
+    class Meta:
+        db_table = "tags"
+
+
 class Product(models.Model):
     id = models.AutoField(primary_key=True)
     name = models.CharField(max_length=100)
@@ -29,6 +37,7 @@ class Product(models.Model):
                                  related_name="products",
                                  null=True,
                                  blank=True)
+    tags = models.ManyToManyField(Tag, related_name="products", )
 
     class Meta:
         db_table = "products"
@@ -38,12 +47,3 @@ class ProductImage(models.Model):
     id = models.AutoField(primary_key=True)
     image = models.ImageField(upload_to='uploads/products/gallery/')
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="images")
-
-
-class Tag(models.Model):
-    id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=100)
-    products = models.ManyToManyField(Product)
-
-    class Meta:
-        db_table = "tags"
