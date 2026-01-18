@@ -1,16 +1,16 @@
 from django.contrib.auth.models import User
 from drf_spectacular.utils import extend_schema, extend_schema_view
-from rest_framework import generics, status
+from rest_framework import generics, status, viewsets
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.parsers import MultiPartParser, FormParser
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from api.models import Category, Product, ProductImage
+from api.models import Category, Product, ProductImage, Order
 from api.serializers import UpsertCategorySerializer, ProductSz, CategoryListSz, ProductImageSz, ProductDetailSz, \
-    UserSerializer
+    UserSerializer, AddOrderSerializer, OrderSerializer, OrderListSerializer
 
 
 @extend_schema_view(
@@ -109,3 +109,36 @@ class RegisterUserView(generics.CreateAPIView):
             },
             status=status.HTTP_201_CREATED
         )
+
+
+@extend_schema_view(
+    list=extend_schema(
+        responses=OrderListSerializer(many=True)
+    ),
+    retrieve=extend_schema(
+        responses=OrderSerializer
+    ),
+    create=extend_schema(
+        request=AddOrderSerializer,
+        responses=OrderSerializer
+    ),
+)
+class OrderViewSet(viewsets.ModelViewSet):
+    queryset = Order.objects.all()
+    permission_classes = (IsAuthenticated,)
+
+    def get_queryset(self):
+        qs = Order.objects.all()
+        if self.action == 'retrieve':
+            qs = (qs.prefetch_related('items')
+                  .prefetch_related('user'))
+        return qs
+
+    def get_serializer_class(self):
+        if self.action == 'retrieve':
+            return OrderSerializer
+        elif self.action == 'create':
+            return AddOrderSerializer
+        elif self.action == 'list':
+            return OrderListSerializer
+        return OrderSerializer
