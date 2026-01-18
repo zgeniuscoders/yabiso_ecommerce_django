@@ -2,7 +2,7 @@ from django.contrib.auth.models import User
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
-from api.models import Category, Product, ProductImage, Tag
+from api.models import Category, Product, ProductImage, Tag, Order, OrderItem
 
 
 class UpsertCategorySerializer(serializers.ModelSerializer):
@@ -173,3 +173,67 @@ class UserSerializer(serializers.ModelSerializer):
             'username': {'required': True, 'allow_null': False, 'allow_blank': False},
             'password': {'required': True, 'write_only': True, 'style': {'input_type': 'password'}}
         }
+
+
+class OrderItemSerializer(serializers.ModelSerializer):
+    product_id = serializers.PrimaryKeyRelatedField(
+        queryset=Product.objects.all(),
+        source="product",
+        required=True,
+        allow_null=True,
+        write_only=True
+    )
+
+    class Meta:
+        model = OrderItem
+        fields = ['id', 'product', 'quantity', 'price', 'order', 'product_id']
+        extra_kwargs = {
+            'order': {'required': False},
+            'product': {'required': False},
+            'product_id': {'required': True},
+            'quantity': {'required': True},
+            'price': {'required': True},
+        }
+
+
+class OrderSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
+    items = OrderItemSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Order
+        fields = ['id', 'user', 'total_price', 'quantity', 'items', 'order_status', 'ordered_date']
+
+
+class OrderListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Order
+        fields = ['id', 'user', 'total_price', 'quantity', 'order_status', 'ordered_date']
+
+
+class AddOrderSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
+    user_id = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all(),
+        source="user",
+        required=True
+    )
+
+    items = serializers.ListField(
+        child=OrderItemSerializer(many=False),
+        write_only=True,
+        required=True
+    )
+
+    class Meta:
+        model = Order
+        fields = ['id', 'user', 'total_price', 'quantity', 'items', 'user_id', 'order_status', 'ordered_date']
+
+    def create(self, validated_data):
+        items_data = validated_data.pop('items')
+        order = Order.objects.create(**validated_data)
+
+        for item_data in items_data:
+            OrderItem.objects.create(order=order, **item_data)
+
+        return order
