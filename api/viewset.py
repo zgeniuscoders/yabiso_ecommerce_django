@@ -3,6 +3,7 @@ from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import generics, status
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -29,6 +30,7 @@ class CategoryVS(ModelViewSet):
     pagination_class.page_size = 20
     pagination_class.page_size_query_param = "perPage"
     pagination_class.max_page_size = 100
+    permission_classes = (IsAuthenticatedOrReadOnly,)
 
     def get_serializer_class(self):
         if self.action in ["create", "update", "partial_update"]:
@@ -55,6 +57,7 @@ class ProductVS(ModelViewSet):
     pagination_class.page_size = 20
     pagination_class.page_size_query_param = "perPage"
     pagination_class.max_page_size = 100
+    permission_classes = (IsAuthenticatedOrReadOnly,)
 
     def get_queryset(self):
         qs = Product.objects.all()
@@ -82,6 +85,7 @@ class ProductImageVS(ModelViewSet):
     queryset = ProductImage.objects.all()
     serializer_class = ProductImageSz
     parser_classes = (MultiPartParser, FormParser)
+    permission_classes = (IsAuthenticatedOrReadOnly,)
 
 
 @extend_schema_view(
