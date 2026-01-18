@@ -1,10 +1,15 @@
+from django.contrib.auth.models import User
 from drf_spectacular.utils import extend_schema, extend_schema_view
+from rest_framework import generics, status
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
+from rest_framework_simplejwt.tokens import RefreshToken
 
 from api.models import Category, Product, ProductImage
-from api.serializers import UpsertCategorySerializer, ProductSz, CategoryListSz, ProductImageSz, ProductDetailSz
+from api.serializers import UpsertCategorySerializer, ProductSz, CategoryListSz, ProductImageSz, ProductDetailSz, \
+    UserSerializer
 
 
 @extend_schema_view(
@@ -77,3 +82,26 @@ class ProductImageVS(ModelViewSet):
     queryset = ProductImage.objects.all()
     serializer_class = ProductImageSz
     parser_classes = (MultiPartParser, FormParser)
+
+
+@extend_schema_view(
+    request=UserSerializer,
+)
+class RegisterUserView(generics.CreateAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+
+        refresh = RefreshToken.for_user(user)
+
+        return Response(
+            {
+                "refresh": str(refresh),
+                "access": str(refresh.access_token),
+            },
+            status=status.HTTP_201_CREATED
+        )
