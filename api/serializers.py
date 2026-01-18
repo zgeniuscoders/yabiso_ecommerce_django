@@ -1,3 +1,4 @@
+from django.contrib.auth.models import User
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
@@ -161,3 +162,14 @@ class ProductDetailSz(serializers.ModelSerializer):
             'images',
             'tags'
         ]
+
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'first_name', 'email', 'username', 'password']
+        extra_kwargs = {
+            'email': {'required': True, 'allow_null': False, 'allow_blank': False},
+            'username': {'required': True, 'allow_null': False, 'allow_blank': False},
+            'password': {'required': True, 'write_only': True, 'style': {'input_type': 'password'}}
+        }
