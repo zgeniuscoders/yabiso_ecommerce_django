@@ -1,3 +1,4 @@
+from django.contrib.auth.models import User
 from django.db import models
 
 
@@ -19,7 +20,7 @@ class Category(models.Model):
 
 class Tag(models.Model):
     id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=100,unique=True)
+    name = models.CharField(max_length=100, unique=True)
 
     class Meta:
         db_table = "tags"
@@ -47,3 +48,36 @@ class ProductImage(models.Model):
     id = models.AutoField(primary_key=True)
     image = models.ImageField(upload_to='uploads/products/gallery/')
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="images")
+
+
+class Order(models.Model):
+    class OrderStatus(models.TextChoices):
+        PENDING = 'PENDING', 'En attente'
+        CANCELLED = 'CANCELLED', 'Annulée'
+        DELIVERED = 'DELIVERED', 'Livrée'
+        PROCESSING = 'PROCESSING', 'En traitement'
+
+    id = models.AutoField(primary_key=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="orders")
+    total_price = models.DecimalField(max_digits=10, decimal_places=2, blank=False, null=False)
+    quantity = models.PositiveIntegerField(default=1)
+    order_status = models.CharField(
+        max_length=20,
+        choices=OrderStatus.choices,
+        default=OrderStatus.PENDING
+    )
+    ordered_date = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "orders"
+
+
+class OrderItem(models.Model):
+    id = models.AutoField(primary_key=True)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="order_items")
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items")
+    quantity = models.PositiveIntegerField(default=1, null=False, blank=False)
+    price = models.DecimalField(max_digits=10, decimal_places=2, blank=False, null=False)
+
+    class Meta:
+        db_table = "order_items"
