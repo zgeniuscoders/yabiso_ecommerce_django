@@ -1,6 +1,8 @@
 from django.contrib.auth.models import User
+from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import generics, status, viewsets
+from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
@@ -31,6 +33,9 @@ class CategoryVS(ModelViewSet):
     pagination_class.page_size_query_param = "perPage"
     pagination_class.max_page_size = 100
     permission_classes = (IsAuthenticatedOrReadOnly,)
+    filter_backends = (SearchFilter, DjangoFilterBackend, OrderingFilter)
+    search_fields = ("name",)
+    ordering_fields = ("name",)
 
     def get_serializer_class(self):
         if self.action in ["create", "update", "partial_update"]:
@@ -58,6 +63,9 @@ class ProductVS(ModelViewSet):
     pagination_class.page_size_query_param = "perPage"
     pagination_class.max_page_size = 100
     permission_classes = (IsAuthenticatedOrReadOnly,)
+    filter_backends = (SearchFilter, DjangoFilterBackend, OrderingFilter)
+    search_fields = ("name",)
+    ordering_fields = ("name", "price")
 
     def get_queryset(self):
         qs = Product.objects.all()
@@ -126,6 +134,9 @@ class RegisterUserView(generics.CreateAPIView):
 class OrderViewSet(viewsets.ModelViewSet):
     queryset = Order.objects.all()
     permission_classes = (IsAuthenticated,)
+    filter_backends = (DjangoFilterBackend, OrderingFilter)
+    filter_fields = ("ordered_date", "order_status", "quantity", "total_price")
+    ordering_fields = ("ordered_date", "order_status", "quantity", "total_price")
 
     def get_queryset(self):
         qs = Order.objects.all()
