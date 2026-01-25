@@ -2,6 +2,7 @@ from django.contrib.auth.models import User
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import generics, status, viewsets
+from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -153,3 +154,23 @@ class OrderViewSet(viewsets.ModelViewSet):
         elif self.action == 'list':
             return OrderListSerializer
         return OrderSerializer
+
+
+class UserViewSet(viewsets.GenericViewSet):
+    permission_classes = (IsAuthenticated,)
+    pagination_class = PageNumberPagination
+
+    @extend_schema(
+        responses=OrderSerializer,
+    )
+    @action(detail=False, methods=['get'], url_path="orders")
+    def order(self, request, *args, **kwargs):
+        queryset = Order.objects.filter(user=request.user).order_by('-id')
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = OrderSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = OrderSerializer(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
