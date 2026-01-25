@@ -174,6 +174,12 @@ class UserSerializer(serializers.ModelSerializer):
             'password': {'required': True, 'write_only': True, 'style': {'input_type': 'password'}}
         }
 
+    def create(self, validated_data):
+        user = User(**validated_data)
+        user.set_password(validated_data['password'])
+        user.save()
+        return user
+
 
 class OrderItemSerializer(serializers.ModelSerializer):
     product_id = serializers.PrimaryKeyRelatedField(
