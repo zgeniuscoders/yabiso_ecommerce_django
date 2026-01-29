@@ -85,18 +85,6 @@ class ProductVS(ModelViewSet):
             return ProductSz
         return ProductDetailSz
 
-
-@extend_schema_view(
-    request=ProductImageSz,
-    responses=ProductImageSz,
-)
-class ProductImageVS(ModelViewSet):
-    queryset = ProductImage.objects.all()
-    serializer_class = ProductImageSz
-    parser_classes = (MultiPartParser, FormParser)
-    permission_classes = (IsAuthenticatedOrReadOnly,)
-
-
 @extend_schema_view(
     request=UserSerializer,
 )
