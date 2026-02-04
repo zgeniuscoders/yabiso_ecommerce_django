@@ -1,6 +1,7 @@
 from django.contrib.auth.models import User
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
+from django.views.decorators.vary import vary_on_headers
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from rest_framework import generics, status, viewsets
@@ -13,9 +14,9 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from api.models import Category, Product, ProductImage, Order
+from api.models import Category, Product, ProductImage, Order, Cart
 from api.serializers import UpsertCategorySerializer, ProductSz, CategoryListSz, ProductImageSz, ProductDetailSz, \
-    UserSerializer, AddOrderSerializer, OrderSerializer, OrderListSerializer
+    UserSerializer, AddOrderSerializer, OrderSerializer, OrderListSerializer, CartListSerializer, CartSerializer
 
 
 @extend_schema_view(
@@ -171,8 +172,13 @@ class UserViewSet(viewsets.GenericViewSet):
         responses=OrderSerializer,
     )
     @action(detail=False, methods=['get'], url_path="orders")
+    @method_decorator(cache_page(60 * 10, key_prefix='order_list'))
+    @method_decorator(vary_on_headers("Authorization"))
     def order(self, request, *args, **kwargs):
-        queryset = Order.objects.filter(user=request.user).order_by('-id')
+        queryset = (Order.objects
+                    .prefetch_related('items')
+                    .prefetch_related('user')
+                    .filter(user=request.user).order_by('-id'))
 
         page = self.paginate_queryset(queryset)
         if page is not None:
@@ -181,3 +187,29 @@ class UserViewSet(viewsets.GenericViewSet):
 
         serializer = OrderSerializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @extend_schema(
+        responses=CartListSerializer,
+    )
+    @action(detail=False, methods=['get'], url_path="cart")
+    @method_decorator(cache_page(60 * 10, key_prefix='cart_list'))
+    @method_decorator(vary_on_headers("Authorization"))
+    def cart(self, request, *args, **kwargs):
+        queryset = (Cart.objects
+                    .prefetch_related('product')
+                    .prefetch_related('user')
+                    .filter(user=request.user).order_by('-id'))
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = CartListSerializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = CartListSerializer(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class CartViewSet(generics.CreateAPIView):
+    queryset = Cart.objects.all()
+    serializer_class = CartSerializer
+    permission_classes = (IsAuthenticated,)
