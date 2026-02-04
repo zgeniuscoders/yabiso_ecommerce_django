@@ -2,7 +2,7 @@ from django.contrib.auth.models import User
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
-from api.models import Category, Product, ProductImage, Tag, Order, OrderItem
+from api.models import Category, Product, ProductImage, Tag, Order, OrderItem, Cart
 
 
 class UpsertCategorySerializer(serializers.ModelSerializer):
@@ -243,3 +243,39 @@ class AddOrderSerializer(serializers.ModelSerializer):
             OrderItem.objects.create(order=order, **item_data)
 
         return order
+
+
+class CartSerializer(serializers.ModelSerializer):
+    user_id = serializers.PrimaryKeyRelatedField(
+        source="user",
+        queryset=User.objects.all(),
+        required=True,
+        write_only=True
+    )
+
+    product_id = serializers.PrimaryKeyRelatedField(
+        queryset=Product.objects.all(),
+        source="product",
+        required=True,
+        write_only=True
+    )
+
+    class Meta:
+        model = Cart
+        fields = ['id', 'user_id', 'product_id', 'quantity', 'product', 'user']
+        extra_kwargs = {
+            'quantity': {'required': True},
+            'product_id': {'required': True, 'write_only': True},
+            'user_id': {'required': True, 'write_only': True},
+            'product': {'read_only': True},
+            'user': {'read_only': True},
+        }
+
+
+class CartListSerializer(serializers.ModelSerializer):
+    product = ProductDetailSz(read_only=True)
+    user = UserSerializer(read_only=True)
+
+    class Meta:
+        model = Cart
+        fields = ['id', 'user', 'product', 'quantity']
