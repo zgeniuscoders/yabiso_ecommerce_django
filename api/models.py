@@ -81,3 +81,14 @@ class OrderItem(models.Model):
 
     class Meta:
         db_table = "order_items"
+
+
+class Cart(models.Model):
+    id = models.AutoField(primary_key=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="carts")
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="carts")
+    quantity = models.PositiveIntegerField(default=1)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "carts"
